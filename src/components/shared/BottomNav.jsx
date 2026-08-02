@@ -51,7 +51,7 @@ const BottomNav = () => {
             : 'text-[#ababab]'}  w-[300px] rounded-[20px]`}> 
             <MdTableBar className='inline mr-2' size={20} />  <p> Tables </p> </button>
 
-          <button className='flex items-center justify-center text-[#ababab] w-[300px]'> 
+          <button onClick={() => navigate("/")} className='flex items-center justify-center text-[#ababab] w-[300px]'> 
             <CiCircleMore className='inline mr-2' size={20} /> <p> More </p></button>   
 
           <button

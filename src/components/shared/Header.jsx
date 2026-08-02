@@ -7,6 +7,7 @@ import logo from '../../assets/images/logo.png';
 import { useDispatch, useSelector } from 'react-redux';
 import { useMutation } from '@tanstack/react-query';
 import { removeUser } from '../../redux/slices/userSlice';
+import { MdDashboard } from 'react-icons/md';
 
 const Header = () => {
 
@@ -47,6 +48,14 @@ const Header = () => {
 
     {/* Logged user */}
     <div className='flex items-center gap-4'>
+        {
+            userData.role === "Admin" && (
+                <div onClick={() => Navigate("/dashboard")} className='bg-[#1f1f1f] rounded-[15px] p-3 cursor-pointer'>
+        <MdDashboard className='text-[#f5f5f5] text-2xl' />
+        </div>
+            )
+        }
+   
     <div className='bg-[#1f1f1f] rounded-[15px] p-3 cursor-pointer'>
         <FaBell className='text-[#f5f5f5] text-2xl' />
     </div>

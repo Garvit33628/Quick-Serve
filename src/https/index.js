@@ -1,19 +1,17 @@
-import { axiosWrapper } from "./axiosWrapper";
+import axios from 'axios';
 
-// Auth Endpoints
-export const login = (data) => axiosWrapper.post("/api/user/login", data);
-export const register = (data) => axiosWrapper.post("/api/user/register", data);
-export const getUserData = () => axiosWrapper.get("/api/user");
-export const logout = () => axiosWrapper.post("/api/user/logout");
+const api = axios.create({
+  baseURL: import.meta.env.VITE_BACKEND_URL,
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json"
+  }
+});
 
-// Table Endpoints
-export const addTable = (data) => axiosWrapper.post("/api/table/", data);
-export const getTables = () => axiosWrapper.get("/api/table");
-export const updateTable = ({ tableId, ...tableData }) =>
-  axiosWrapper.put(`/api/table/${tableId}`, tableData);
-
-// Order Endpoints
-export const addOrder = (data) => axiosWrapper.post("/api/order/", data);
-export const getOrders = () => axiosWrapper.get("/api/order");
-export const updateOrderStatus = ({ orderId, orderStatus }) =>
-  axiosWrapper.put(`/api/order/${orderId}`, { orderStatus });
+// API Endpoints
+export const login = (data) => api.post("/api/user/login", data);
+   export const register = (data) => api.post("/api/user/register", data);
+    export const getUserData = () => api.get("/api/user");
+      export const logout = () => api.post("/api/user/logout");
+        export const login = (data) => api.post("/api/table/", data);
