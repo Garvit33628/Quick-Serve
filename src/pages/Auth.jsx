@@ -44,7 +44,7 @@ const Auth = () => {
 
         {/* Components */}
        <div className="w-full max-w-md">
-        {isRegister ? <Register /> : <Login />}
+        {isRegister ? <Register setIsRegister={setIsRegister} /> : <Login />}
   </div>
         <div className='flex justify-center mt-6'>
         <p className='text-sm text-[#ababab]'> 
