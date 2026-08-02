@@ -6,12 +6,14 @@ import { updateTable } from '../../redux/slices/customerSlice'
 import { FaLongArrowAltRight } from 'react-icons/fa'
 
 
-const TableCard = ({ tableId, name, status, initials}) => {
+const TableCard = ({ tableId, name, status, initials, seats}) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const handleClick = () => {
     if(status === "Booked") return;
-    dispatch(updateTable({tableNo: name }))
+
+    const table = { tableId: id, tableNo: name }
+    dispatch(updateTable({table }))
     navigate(`/menu`);
   };
   

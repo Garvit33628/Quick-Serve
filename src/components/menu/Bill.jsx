@@ -1,28 +1,24 @@
 import React, { useState } from 'react'
-import { useSelector } from 'react-redux'
-import { getTotalPrice } from '../../redux/slices/cartSlice'
+import { useDispatch, useSelector } from 'react-redux'
+import { getTotalPrice, removeAllItems } from '../../redux/slices/cartSlice'
 import { enqueueSnackbar } from "notistack"
+import { useMutation } from '@tanstack/react-query'
+import { addOrder, updateTable } from '../../https'
+import { removeCustomer } from '../../redux/slices/customerSlice'
 
-function loadScript(src){
-  return new Promise((resolve) => {
-    script.src = src;
-    script.onload = () => {
-      resolve(true);
-    };
-    script.onerror = () => {
-      resolve(false);
-    };
-    document.body.appendChild(script);
-  });
-}
+
+
+
 
 // category (bgcolor, icon,name )
 // menu ()
 
 const Bill = () => {
-  const cartData = useSelector(state => state)
+  const dispatch = useDispatch();
+  const customerData = useSelector((state) => state.customer);
+  const cartData = useSelector((state) => state.cart);
   const total = useSelector(getTotalPrice);
-  const taxRate = 5.25;
+  const taxRate = 13;
   const tax = (total * taxRate) / 100;
   const totalPriceWithTax = total + tax;
 
@@ -32,8 +28,68 @@ const Bill = () => {
       enqueueSnackbar("Please select a payment method!", {variant: "warning"});
 
       return;
+
+      const orderData = {
+        customerDetails: {
+          name: customerData.customerName,
+          phone: customerData.customerPhone,
+          guests: customerData.guests
+        },
+        orderStatus: "In Progress",
+        bills: {
+          total: total,
+          tax: tax,
+          totalWithTax: totalPriceWithTax
+        },
+        items: cartData,
+        table: customerData.table.tableId,
+      }
     }
-  }
+  };
+
+    setTimeout(() => {
+      orderMutation.mutate(orderData);
+    }, 1500)
+
+  const orderMutation = useMutation({
+    mutationFn: (reqData) => addOrder(reqData),
+    onSuccess: (resData) => {
+      const { data } = resData.data;
+      console.log(data);
+
+      // Update Table
+      const tableData = {
+        status: "Booked",
+        orderId: data._id,
+      tableId: data.table    
+      }
+
+      setTimeout(() => {
+        tableUpdateMutation.mutate(tableData);
+      }, 1500);
+
+      enqueueSnackbar("Order Placed!", {
+        variant: "success",
+      });
+    },
+    onError: (error) => {
+      console.log(error);
+    }
+  });
+
+    const tableUpdateMutation = useMutation({
+      mutationFn: (reqData) => updateTable(reqData),
+      onSuccess: (resData) => {
+
+          console.log(resData);
+          dispatch(removeCustomer());
+          dispatch(removeAllItems());
+      },
+       onError: (error) => {
+      console.log(error);
+    }
+   
+    })
 
   return (
     <>
@@ -48,7 +104,7 @@ const Bill = () => {
 
     <div className='flex items-center justify-between px-5 mt-2'>
     <p className='text-xs text-[#ababab] font-medium mt-2'> 
-        Tax(5.25%)
+        Tax(13%)
     </p>
     <h1 className='text-[#f5f5f5] text-md font-bold'>
     NPR {tax.toFixed(2)}
