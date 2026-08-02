@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, {  useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { getTotalPrice, removeAllItems } from '../../redux/slices/cartSlice'
 import { enqueueSnackbar } from "notistack"
@@ -23,6 +23,8 @@ const Bill = () => {
   const totalPriceWithTax = total + tax;
 
   const [paymentMethod, setPaymentMethod] = useState();
+  const [showInvoice, setShowInvoice] = useState(false);
+  const [orderInfo, setOrderInfo] = useState();
   const handlePlaceOrder = async () => {
     if(!paymentMethod){
       enqueueSnackbar("Please select a payment method!", {variant: "warning"});
@@ -43,13 +45,13 @@ const Bill = () => {
         },
         items: cartData,
         table: customerData.table.tableId,
+        paymentMethod: paymentMethod
       }
+       orderMutation.mutate(orderData);
     }
   };
-
-    setTimeout(() => {
-      orderMutation.mutate(orderData);
-    }, 1500)
+     
+    
 
   const orderMutation = useMutation({
     mutationFn: (reqData) => addOrder(reqData),
@@ -138,6 +140,8 @@ const Bill = () => {
     Place Order
     </button>
     </div>
+
+    {showInvoice && <Invoice orderInfo={orderInfo} setShowInvoice={setShowInvoice} />}
     </>
   )
 }
