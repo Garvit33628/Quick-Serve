@@ -20,29 +20,31 @@ function Layout() {
  { !hideHeaderRoutes.includes(location.pathname) && <Header /> }
   <Routes>
      <Route path = "/" element={
-      // <ProtectedRoutes>
+      <ProtectedRoutes>
         <Home />
-      
+        </ ProtectedRoutes >
      } />
      <Route path = "/home" element={
-      // <ProtectedRoutes>
+      <ProtectedRoutes>
         <Home />
+        </ProtectedRoutes>
        } />
      <Route path = "/auth" element={ isAuth ? <Navigate to="/"/> : <Auth />} />
      <Route path = "/orders" element={
-      // <ProtectedRoutes>
+      <ProtectedRoutes>
         <Orders />
+        </ProtectedRoutes>
       
      } />
      <Route path="/tables" element={
-      // <ProtectedRoutes>
+      <ProtectedRoutes>
         <Tables />
-      
+      </ProtectedRoutes>
      } />
      <Route path="/menu" element={
-      // <ProtectedRoutes>
+      <ProtectedRoutes>
         <Menu />
-      
+      </ProtectedRoutes>
      } />
      <Route path="*" element={<div>Not Found</div>} />
   </Routes>
