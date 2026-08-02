@@ -1,36 +1,46 @@
 import React from 'react'
-import { FaCheckDouble, FaCircle } from 'react-icons/fa'
+import { FaCheckDouble, FaCircle, FaLongArrowAltRight } from 'react-icons/fa'
+import { getAvatarName } from '../../utils'
 
-const OrderList = () => {
+const OrderList = ({key, order}) => {
   return (
     
       <div className='flex items-center gap-5 mb-2'>
-      <button className='bg-[#f6b100] p-3 text-xl font-bold rounded-lg'> AM </button>
+      <button className='bg-[#f6b100] p-3 text-xl font-bold rounded-lg'> {getAvatarName(order.customerDetails.name)} </button>
       <div className='flex items-center justify-between w-full'>
         <div className='flex flex-col items-start gap-1'> 
-          <h1 className='text-[#f5f5f5] text-lg font-semibold tracking-wide'> Garvit Shrestha </h1>
-          <p className='text-[#ababab] text-sm'> #101 / Dine in </p>
+          <h1 className='text-[#f5f5f5] text-lg font-semibold tracking-wide'> {order.customerDetails.name} </h1>
+          <p className='text-[#ababab] text-sm'> {order.items.length} Items </p>
         </div>
         <div className="">
           <h1 className='text-[#f6b100] font-semibold border border-[#f6b100] rounded-lg
-          p-2'> Table No : 3 </h1>
+          p-2'> Table <FaLongArrowAltRight 
+          className='text-[#ababab] ml-2 inline'/> {order.table.tableNo} </h1>
         </div>
        
         <div className='flex flex-col items-end gap-2'> 
-          <p className='text-green-600 px-4'> <FaCheckDouble 
-          className='inline mr-2' />
-             Ready </p>
-          <p className='text-[#ababab] text-sm'><FaCircle className='inline
-          mr-2 text-green-600'/> 
-          Ready To Serve </p>
+           {
+                      order.orderStatus === "Ready" ? (
+                        <>
+                        <p className='text-green-600 px-2 py-1 bg-[#2e4a40] rounded-lg'> 
+                          <FaCheckDouble 
+                    className='inline mr-2' />
+                       {order.orderStatus} </p>
+                  
+                    </>
+                      ) : ( 
+                        <>
+                        <p className='text-yellow-600 px-2 py-1 bg-[#4a452e] rounded-lg'> <FaCheckDouble 
+                    className='inline mr-2' />
+                       {order.orderStatus} </p>
+                   
+                    </>
+                      )
+}
         </div>
       </div>
-      {/* <div>
-        <p> January 18, 2026 08:32 PM </p>
-        <p>8 items</p>
-      </div>
-      <hr className='w-full text-[#f5f5f5]'/> */}
-    </div>
+      
+    </div> 
     
   )
 }

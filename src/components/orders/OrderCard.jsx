@@ -1,6 +1,6 @@
 import React from 'react'
-import { FaCheckDouble, FaCircle } from 'react-icons/fa'
-import { getAvatarName } from '../../utils';
+import { FaCheckDouble, FaCircle, FaLongArrowAltRight } from 'react-icons/fa'
+import { formatDateAndTime, getAvatarName } from '../../utils';
 
 const OrderCard = ({ key, order}) => {
   console.log(order);
@@ -11,7 +11,13 @@ const OrderCard = ({ key, order}) => {
       <div className='flex items-center justify-between w-[100%]'>
         <div className='items-start flex flex-col gap-1'> 
           <h1 className='text-[#f5f5f5] text-lg font-semibold tracking-wide'> {order.customerDetails.name} </h1>
-          <p className='text-[#ababab] text-sm'> 8 Items </p>
+          <p className='text-[#ababab] text-sm'> 
+            #{Math.floor(new Date(order.orderDate).getTime
+        ())} / Dine in </p>
+        <p className='text-[#ababab] text-sm'> 
+         Table <FaLongArrowAltRight className='text-[#ababab] ml-2 inline' />
+          {order.table.tableNo}
+          </p>
         </div>
         {/* <div>
           <h1 className='text-[#f6b100] font-semibold border border-[#f6b100] rounded-lg p-1'> Table No: 3</h1>
@@ -20,10 +26,11 @@ const OrderCard = ({ key, order}) => {
           {
             order.orderStatus === "Ready" ? (
               <>
-              <p className='text-green-600 px-2 py-1 bg-[#2e4a40] rounded-lg'> <FaCheckDouble 
+              <p className='text-green-600 px-2 py-1 bg-[#2e4a40] rounded-lg'> 
+                <FaCheckDouble 
           className='inline mr-2' />
              {order.orderStatus} </p>
-          <p className='text-[#ababab] text-sm'><FaCircle className='inline
+          <p className='text-[#ababab] text-sm'> <FaCircle className='inline
           mr-2 text-green-600'/> 
           Ready To Serve </p>
           </>
@@ -42,13 +49,13 @@ const OrderCard = ({ key, order}) => {
       </div>
       </div>
       <div className='flex justify-between items-center mt-4 text-[#ababab]'>
-        <p> {order.createdAt} </p>
+        <p> {formatDateAndTime(order.createdAt)} </p>
         <p> {order.items.length} Items </p>
       </div>
       <hr className='w-full mt-4 border-t-1 border-gray-500'/>
       <div className="flex items-center justify-between mt-4">
         <h1 className='text-[#f5f5f5] text-xl font-semibold'> Total </h1>
-        <p className='text-[#f5f5f5] text-lg font-semibold'>NPR {order.bills.totalWithTax} </p>
+        <p className='text-[#f5f5f5] text-lg font-semibold'>NPR {order.bills.totalWithTax.toFixed(2)} </p>
       </div>
     </div>
   )
