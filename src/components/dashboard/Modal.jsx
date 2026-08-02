@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { IoIosCloseCircle } from "react-icons/io";
 import { useMutation } from '@tanstack/react-query';
 import { addTable } from '../../../../quickserve_backend/src/controller/tableController';
+import { enqueueSnackbar } from 'notistack';
 
 const Modal = ({setIsTableModalOpen}) => {
 const [tableData, setTableData] = useState({
@@ -28,9 +29,12 @@ const [tableData, setTableData] = useState({
         mutationFn: (reqData) => addTable(reqData),
         onSuccess: (data) => {
             setIsTableModalOpen(false);
-            console.log(data);
+            const { data } = res;
+            enqueueSnackbar(data.message, { variant: "success" })
         },
         onError: (error) => {
+            const { data } = error.response;
+            enqueueSnackbar(data.message, { variant: "error" })
             console.log(error);
         }
     })

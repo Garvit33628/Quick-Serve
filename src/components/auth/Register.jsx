@@ -120,7 +120,7 @@ const Register = (setIsRegister) => {
             </label>
 
             <div className="flex items-center gap-3 mt-4">
-                {['Waiter', 'Cashier', 'Admin'].map((role) => {
+                {['Staff', 'Admin'].map((role) => {
                     return(
                         <button 
                     key={role}
