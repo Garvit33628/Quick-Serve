@@ -15,7 +15,7 @@ const Menu = () => {
 
   return (
     <section className='bg-[#1f1f1f] h-[calc(100vh-5rem)] overflow-hidden flex gap-3'>
-       {/* LEFT DIV */}
+      
       <div className='flex-[3]'>
         <div className='flex items-center justify-between px-10 py-4'>
     <div className='flex items-center gap-4'>
@@ -29,9 +29,9 @@ const Menu = () => {
                 <MdRestaurantMenu className='text-[#f5f5f5] text-4xl' />
                 <div className='flex flex-col items-start'>
                     <h1 className='text-md text-[#f5f5f5] font-semibold tracking-wide'> 
-                        {customerData.customerName || "Customer Name"} </h1>
+                        {customerData.customerName || "Customer"} </h1>
                     <p className='text-xs text-[#ababab] font-medium'>
-                       Table : {customerData?.table.tableNo || "N/A"}</p>
+                       Table {customerData?.table?.tableNo || customerData?.table?.name || "N/A"}</p>
                 </div>
             </div>
 
@@ -42,15 +42,15 @@ const Menu = () => {
 
       
 
-    {/* RIGHT DIV */}
+   
         <div className="flex-[1] bg-[#1a1a1a] mt-4 mr-3 h-[calc(100vh-7rem)]  rounded-lg pt-2 overflow-y-auto">
-         {/* customer info */}
+        
         <CustomerInfo />
           <hr className="border-[#2a2a2a] border-t-2" />
-         {/* cart items */}
+         
         <CartInfo />
         <hr className="border-[#2a2a2a] border-t-2" />
-         {/* bills */}
+     
          <Bill />
           </div>
          
