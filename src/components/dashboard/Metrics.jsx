@@ -1,6 +1,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getCategories, getMenuItems, getOrders, getTables } from '../../https';
+import { getLocalDateString } from '../../utils';
+import SalesChart from './SalesChart';
+import DailyRecords from './DailyRecords';
 
 const Metrics = () => {
     const { data: catRes } = useQuery({ queryKey: ['categories'], queryFn: getCategories });
@@ -14,12 +17,18 @@ const Metrics = () => {
     const activeOrdersCount = ordersList.filter(o => o.orderStatus === "In Progress" || o.orderStatus === "Ready").length;
     const tablesCount = tableRes?.data?.data?.length || 0;
 
-    const totalRevenue = ordersList
-        .filter(o => o.paymentStatus === "Paid")
+    const todayLocalStr = getLocalDateString(new Date());
+
+    const todaysRevenue = ordersList
+        .filter(o => {
+            const isPaid = o.paymentStatus === "Paid" || o.orderStatus === "Completed";
+            const orderDateStr = getLocalDateString(o.orderDate || o.createdAt);
+            return isPaid && orderDateStr === todayLocalStr;
+        })
         .reduce((sum, o) => sum + (o.bills?.totalWithTax || 0), 0);
 
     const dynamicMetricsData = [
-        { title: "Total Revenue", value: `NPR ${totalRevenue.toFixed(2)}`, color: "#025cca" },
+        { title: "Today's Revenue", value: `NPR ${todaysRevenue.toFixed(2)}`, color: "#025cca" },
         { title: "Total Orders", value: `${ordersList.length}`, color: "#02ca3a" },
         { title: "Active Orders", value: `${activeOrdersCount}`, color: "#f6b100" },
         { title: "Total Tables", value: `${tablesCount}`, color: "#be3e3f" },
@@ -33,55 +42,67 @@ const Metrics = () => {
     ];
 
     return (
-        <div className='container mx-auto py-2 px-6 md:px-4'>
-            <div className='flex justify-between items-center'>
-                <div>
-                    <h2 className='font-semibold text-[#f5f5f5] text-xl'>
-                        Overall Performance
-                    </h2>
-                    <p className='text-sm text-[#ababab]'> QuickServe Realtime Metrics </p>
-                </div>
-            </div>
-            <div className='mt-6 grid grid-cols-4 gap-4'>
-                {dynamicMetricsData.map((metric, index) => (
-                    <div
-                        key={index}
-                        className='shadow-sm rounded-lg p-4'
-                        style={{ backgroundColor: metric.color }}
-                    >
-                        <p className='font-medium text-xs text-[#f5f5f5]'>
-                            {metric.title}
-                        </p>
-                        <p className="mt-1 font-semibold text-2xl text-[#f5f5f5]">
-                            {metric.value}
-                        </p>
+        <div className='container mx-auto py-2 px-2 md:px-0 space-y-8'>
+            {/* Top Cards Section */}
+            <div>
+                <div className='flex justify-between items-center mb-4'>
+                    <div>
+                        <h2 className='font-bold text-[#f5f5f5] text-2xl tracking-wide'>
+                            Overall Performance Overview
+                        </h2>
+                        <p className='text-sm text-[#ababab]'>QuickServe Real-time Key Business Metrics</p>
                     </div>
-                ))}
+                </div>
+                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
+                    {dynamicMetricsData.map((metric, index) => (
+                        <div
+                            key={index}
+                            className='shadow-lg rounded-2xl p-5 border border-white/10 flex flex-col justify-between transition-transform duration-200 hover:-translate-y-1'
+                            style={{ backgroundColor: metric.color }}
+                        >
+                            <p className='font-semibold text-xs text-[#f5f5f5]/90 uppercase tracking-wider'>
+                                {metric.title}
+                            </p>
+                            <p className="mt-2 font-black text-2xl text-[#f5f5f5]">
+                                {metric.value}
+                            </p>
+                        </div>
+                    ))}
+                </div>
             </div>
 
-            <div className="flex flex-col justify-between mt-12">
-                <div>
-                    <h2 className="font-semibold text-[#f5f5f5] text-xl">
-                        Item Details
-                    </h2>
-                    <p className="text-sm text-[#ababab]">
-                        Inventory and Management Overview
-                    </p>
-                </div>
-            </div>
-            <div className='mt-6 grid grid-cols-4 gap-4'>
-                {dynamicItemsData.map((item, index) => (
-                    <div
-                        key={index}
-                        className="shadow-sm rounded-lg p-4"
-                        style={{ backgroundColor: item.color }}
-                    >
-                        <p className="font-medium text-xs text-[#f5f5f5]">{item.title}</p>
-                        <p className="mt-1 font-semibold text-2xl text-[#f5f5f5]">
-                            {item.value}
+            {/* Sales Scaling Graph Component (Per Day, Month, Year) */}
+            <SalesChart orders={ordersList} />
+
+            {/* Daily Records with Date Selector Component */}
+            <DailyRecords orders={ordersList} />
+
+            {/* Inventory Overview Footer Cards */}
+            <div>
+                <div className="flex flex-col justify-between mb-4">
+                    <div>
+                        <h2 className="font-bold text-[#f5f5f5] text-xl">
+                            Inventory & Resource Management
+                        </h2>
+                        <p className="text-sm text-[#ababab]">
+                            Summary of active categories, dishes, tables, and active queues
                         </p>
                     </div>
-                ))}
+                </div>
+                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
+                    {dynamicItemsData.map((item, index) => (
+                        <div
+                            key={index}
+                            className="shadow-md rounded-2xl p-5 border border-white/10 flex flex-col justify-between"
+                            style={{ backgroundColor: item.color }}
+                        >
+                            <p className="font-semibold text-xs text-[#f5f5f5]/90 uppercase tracking-wider">{item.title}</p>
+                            <p className="mt-2 font-black text-2xl text-[#f5f5f5]">
+                                {item.value}
+                            </p>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );

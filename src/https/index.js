@@ -14,6 +14,9 @@ export const login = (data) => api.post("/api/user/login", data);
 export const register = (data) => api.post("/api/user/register", data);
 export const getUserData = () => api.get("/api/user");
 export const logout = () => api.post("/api/user/logout");
+export const getAllUsers = () => api.get("/api/user/allUsers");
+export const setUserRoleApi = ({ id, role }) => api.put(`/api/user/setUserRole/${id}`, { role });
+export const deleteUserApi = (id) => api.delete(`/api/user/deleteUser/${id}`);
 
 
 export const addTable = (data) => api.post("/api/table", data);
@@ -24,6 +27,7 @@ export const updateTable = ({ tableId, ...tableData }) => api.put(`/api/table/${
 export const addOrder = (data) => api.post("/api/order", data);
 export const getOrders = () => api.get("/api/order");
 export const getOrderById = (id) => api.get(`/api/order/${id}`);
+export const updateOrderApi = ({ orderId, ...data }) => api.put(`/api/order/${orderId}`, data);
 export const updateOrderStatus = ({ orderId, orderStatus }) => api.put(`/api/order/${orderId}`, { orderStatus });
 
 

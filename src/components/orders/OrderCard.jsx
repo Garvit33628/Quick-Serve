@@ -24,11 +24,11 @@ const OrderCard = ({ order }) => {
 
     const getTableNo = () => {
         if (!order.table) return '1';
-        if (typeof order.table === 'object' && order.table?.tableNo) {
+        if (typeof order.table === 'object' && order.table !== null && order.table?.tableNo) {
             return order.table.tableNo;
         }
         if (typeof order.table === 'string') {
-            const found = tablesList.find(t => t._id === order.table);
+            const found = tablesList.find(t => t && t._id === order.table);
             if (found && found.tableNo) return found.tableNo;
             if (order.table.length === 24) return '1';
             return order.table;
@@ -38,7 +38,9 @@ const OrderCard = ({ order }) => {
 
     const customerName = order.customerDetails?.name || "Customer";
     const tableNumber = getTableNo();
-    const tableObj = typeof order.table === 'object' ? { tableId: order.table._id, tableNo: order.table.tableNo } : { tableId: order.table, tableNo: tableNumber };
+    const tableObj = (order.table && typeof order.table === 'object')
+        ? { tableId: order.table._id || null, tableNo: order.table.tableNo || tableNumber }
+        : { tableId: order.table || null, tableNo: tableNumber };
     const totalAmount = order.bills?.totalWithTax ? Number(order.bills.totalWithTax).toFixed(2) : "0.00";
     const orderTime = order.orderDate || order.createdAt || Date.now();
     const orderIdShort = Math.floor(new Date(orderTime).getTime());

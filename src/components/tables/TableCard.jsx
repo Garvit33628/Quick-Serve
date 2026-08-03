@@ -3,7 +3,7 @@ import { getAvatarName, getRandomBG } from '../../utils';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setOrder, updateTable } from '../../redux/slices/customerSlice';
-import { setCart, removeAllItems } from '../../redux/slices/cartSlice';
+import { setCart, removeAllItems, getCartForTable } from '../../redux/slices/cartSlice';
 import { getOrderById } from '../../https';
 import { FaUserFriends, FaArrowRight, FaReceipt } from 'react-icons/fa';
 import { MdTableBar } from 'react-icons/md';
@@ -33,12 +33,14 @@ const TableCard = ({ tableId, name, status, initials, seats, currentOrder, onSel
                             activeOrderId: order._id,
                             orderId: order._id,
                             customerName: order.customerDetails?.name || initials || "Customer",
-                            customerPhone: order.customerDetails?.phone || "",
+                            customerPhone: order.customerDetails?.phone || 0,
                             guests: order.customerDetails?.guests || 1,
                             table: { tableId, tableNo: name },
                             orderStatus: order.orderStatus
                         }));
-                        dispatch(setCart(order.items || []));
+                        const localCart = getCartForTable(tableId, order._id);
+                        const itemsToLoad = (localCart && localCart.length > 0) ? localCart : (order.items || []);
+                        dispatch(setCart(itemsToLoad));
                         navigate(`/menu`);
                         return;
                     }
@@ -52,7 +54,7 @@ const TableCard = ({ tableId, name, status, initials, seats, currentOrder, onSel
                 enqueueSnackbar("No active order linked to this booked table!", { variant: "warning" });
             }
         } else {
-            
+
             if (onSelectAvailableTable) {
                 onSelectAvailableTable({ tableId, tableNo: name, seats });
             }
@@ -62,11 +64,10 @@ const TableCard = ({ tableId, name, status, initials, seats, currentOrder, onSel
     return (
         <div
             onClick={handleClick}
-            className={`w-full bg-[#262626] border border-[#333333] hover:border-[#f6b100]/50 p-5 rounded-2xl transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl cursor-pointer flex flex-col justify-between relative overflow-hidden group ${
-                loading ? "opacity-50 pointer-events-none" : ""
-            }`}
+            className={`w-full bg-[#262626] border border-[#333333] hover:border-[#f6b100]/50 p-5 rounded-2xl transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl cursor-pointer flex flex-col justify-between relative overflow-hidden group ${loading ? "opacity-50 pointer-events-none" : ""
+                }`}
         >
-           
+
             <div className='flex items-center justify-between'>
                 <div className='flex items-center gap-2 text-[#f5f5f5]'>
                     <div className='p-2.5 rounded-xl bg-[#1f1f1f] text-[#f6b100] group-hover:bg-[#f6b100] group-hover:text-gray-900 transition-colors'>
@@ -81,22 +82,20 @@ const TableCard = ({ tableId, name, status, initials, seats, currentOrder, onSel
                 </div>
 
                 <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-wide ${
-                        isBooked
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-wide ${isBooked
                             ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-500/30'
                             : 'bg-amber-950/80 text-amber-400 border border-amber-500/30'
-                    }`}
+                        }`}
                 >
                     <span
-                        className={`w-2 h-2 rounded-full mr-1.5 ${
-                            isBooked ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
-                        }`}
+                        className={`w-2 h-2 rounded-full mr-1.5 ${isBooked ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                            }`}
                     ></span>
                     {displayStatus}
                 </span>
             </div>
 
-            
+
             <div className='my-6 flex flex-col items-center justify-center py-2'>
                 {isBooked ? (
                     <div className='flex flex-col items-center gap-2'>
@@ -123,7 +122,7 @@ const TableCard = ({ tableId, name, status, initials, seats, currentOrder, onSel
                 )}
             </div>
 
-            
+
             <div className='pt-3 border-t border-[#333333] flex items-center justify-between text-xs font-semibold'>
                 {isBooked ? (
                     <span className='text-amber-400 flex items-center gap-1.5 w-full justify-center py-1.5 rounded-lg bg-amber-500/10 group-hover:bg-amber-500 group-hover:text-gray-900 transition-colors'>

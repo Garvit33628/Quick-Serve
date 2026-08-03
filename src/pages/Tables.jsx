@@ -17,7 +17,6 @@ const Tables = () => {
     const [status, setStatus] = useState("all");
     const [selectedTableForOrder, setSelectedTableForOrder] = useState(null);
     const [name, setName] = useState("");
-    const [phone, setPhone] = useState("");
     const [guestCount, setGuestCount] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -42,7 +41,6 @@ const Tables = () => {
     const handleOpenModalForTable = (table) => {
         setSelectedTableForOrder(table);
         setName("");
-        setPhone("");
         setGuestCount(1);
         setIsModalOpen(true);
     };
@@ -50,10 +48,6 @@ const Tables = () => {
     const handleCreateOrderSubmit = async () => {
         if (!name.trim()) {
             enqueueSnackbar("Please enter customer name!", { variant: "warning" });
-            return;
-        }
-        if (!phone || phone.toString().length !== 10) {
-            enqueueSnackbar("Please enter a valid 10-digit phone number!", { variant: "warning" });
             return;
         }
 
@@ -65,11 +59,11 @@ const Tables = () => {
 
         try {
             setSubmitting(true);
-          
+
             const orderData = {
                 customerDetails: {
                     name: name.trim(),
-                    phone: Number(phone),
+                    phone: 0,
                     guests: Number(guestCount)
                 },
                 orderStatus: "In Progress",
@@ -83,22 +77,22 @@ const Tables = () => {
             const newOrder = res?.data?.data;
 
             if (newOrder) {
-                
+
                 await updateTableApi({ tableId, status: "Booked", orderId: newOrder._id });
 
-               
+
                 dispatch(setOrder({
                     activeOrderId: newOrder._id,
                     orderId: newOrder._id,
                     customerName: name.trim(),
-                    customerPhone: Number(phone),
+                    customerPhone: 0,
                     guests: Number(guestCount),
                     table: { tableId, tableNo: selectedTableForOrder?.tableNo || selectedTableForOrder?.name },
                     orderStatus: "In Progress"
                 }));
                 dispatch(removeAllItems());
 
-                
+
                 queryClient.invalidateQueries(['tables']);
                 enqueueSnackbar(`Table ${selectedTableForOrder?.tableNo || ''} booked for ${name.trim()}!`, { variant: "success" });
             }
@@ -115,10 +109,7 @@ const Tables = () => {
     const allTables = resData?.data?.data || [];
 
     const isTableBooked = (table) => {
-        const custName = table?.currentOrder?.customerDetails?.name
-            || (customerData?.table?.tableId === table._id ? customerData.customerName : null)
-            || (customerData?.table?.tableNo === table.tableNo ? customerData.customerName : null);
-        return table.status === "Booked" || Boolean(custName) || Boolean(table.currentOrder);
+        return table.status === "Booked" && Boolean(table.currentOrder);
     };
 
     const bookedCount = allTables.filter(isTableBooked).length;
@@ -133,7 +124,7 @@ const Tables = () => {
     return (
         <div>
             <section className='bg-[#1f1f1f] h-[calc(100vh-5rem)] overflow-hidden flex flex-col'>
-              
+
                 <div className='flex items-center justify-between px-10 py-4 border-b border-[#2a2a2a]'>
                     <div className='flex items-center gap-4'>
                         <BackButton />
@@ -147,15 +138,14 @@ const Tables = () => {
                         </div>
                     </div>
 
-                    
+
                     <div className='flex items-center gap-3'>
                         <button
                             onClick={() => setStatus("all")}
-                            className={`flex items-center gap-2 text-sm px-4 py-2 rounded-xl font-semibold transition ${
-                                status === "all"
-                                    ? "bg-[#f6b100] text-gray-900 shadow-md"
-                                    : "bg-[#262626] text-[#ababab] hover:bg-[#333333] hover:text-white"
-                            }`}
+                            className={`flex items-center gap-2 text-sm px-4 py-2 rounded-xl font-semibold transition ${status === "all"
+                                ? "bg-[#f6b100] text-gray-900 shadow-md"
+                                : "bg-[#262626] text-[#ababab] hover:bg-[#333333] hover:text-white"
+                                }`}
                         >
                             <span>All</span>
                             <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${status === "all" ? "bg-gray-900/20 text-gray-900" : "bg-[#1f1f1f] text-gray-400"}`}>
@@ -165,11 +155,10 @@ const Tables = () => {
 
                         <button
                             onClick={() => setStatus("booked")}
-                            className={`flex items-center gap-2 text-sm px-4 py-2 rounded-xl font-semibold transition ${
-                                status === "booked"
-                                    ? "bg-emerald-600 text-white shadow-md"
-                                    : "bg-[#262626] text-[#ababab] hover:bg-[#333333] hover:text-white"
-                            }`}
+                            className={`flex items-center gap-2 text-sm px-4 py-2 rounded-xl font-semibold transition ${status === "booked"
+                                ? "bg-emerald-600 text-white shadow-md"
+                                : "bg-[#262626] text-[#ababab] hover:bg-[#333333] hover:text-white"
+                                }`}
                         >
                             <FaBookmark size={12} />
                             <span>Booked</span>
@@ -180,11 +169,10 @@ const Tables = () => {
 
                         <button
                             onClick={() => setStatus("available")}
-                            className={`flex items-center gap-2 text-sm px-4 py-2 rounded-xl font-semibold transition ${
-                                status === "available"
-                                    ? "bg-amber-600 text-white shadow-md"
-                                    : "bg-[#262626] text-[#ababab] hover:bg-[#333333] hover:text-white"
-                            }`}
+                            className={`flex items-center gap-2 text-sm px-4 py-2 rounded-xl font-semibold transition ${status === "available"
+                                ? "bg-amber-600 text-white shadow-md"
+                                : "bg-[#262626] text-[#ababab] hover:bg-[#333333] hover:text-white"
+                                }`}
                         >
                             <FaCheckCircle size={12} />
                             <span>Available</span>
@@ -195,7 +183,7 @@ const Tables = () => {
                     </div>
                 </div>
 
-               
+
                 <div className="flex-1 overflow-y-auto px-10 py-6 pb-28">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-400">
@@ -234,7 +222,7 @@ const Tables = () => {
                 <BottomNav />
             </section>
 
-            
+
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={`Create Order for Table ${selectedTableForOrder?.tableNo || ''}`}>
                 <div className='space-y-4'>
                     <div>
@@ -247,22 +235,6 @@ const Tables = () => {
                                 onChange={(e) => setName(e.target.value)}
                                 type="text"
                                 placeholder='Enter customer name'
-                                className='bg-transparent flex-1 text-white focus:outline-none'
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className='block text-[#ababab] mb-1 text-sm font-medium'>
-                            Customer Phone (10 Digits)
-                        </label>
-                        <div className='flex items-center rounded-lg p-3 bg-[#1f1f1f] border border-[#333] focus-within:border-yellow-500'>
-                            <input
-                                value={phone}
-                                onChange={(e) => setPhone(e.target.value)}
-                                type="number"
-                                placeholder='9800000000'
                                 className='bg-transparent flex-1 text-white focus:outline-none'
                                 required
                             />
@@ -290,7 +262,8 @@ const Tables = () => {
             </Modal>
         </div>
     );
-};
+}
+
 
 export default Tables;
 

@@ -18,7 +18,6 @@ const BottomNav = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [guestCount, setGuestCount] = useState(1);
     const [name, setName] = useState("");
-    const [phone, setPhone] = useState("");
 
     const openModal = () => setIsModalOpen(true);
     const closeModal = () => setIsModalOpen(false);
@@ -28,16 +27,12 @@ const BottomNav = () => {
             enqueueSnackbar("Please enter customer name!", { variant: "warning" });
             return;
         }
-        if (!phone || phone.toString().length !== 10) {
-            enqueueSnackbar("Please enter a valid 10-digit phone number!", { variant: "warning" });
-            return;
-        }
         if (guestCount <= 0) {
             enqueueSnackbar("Guest count must be at least 1!", { variant: "warning" });
             return;
         }
 
-        dispatch(setCustomer({ name: name.trim(), phone: Number(phone), guests: guestCount }));
+        dispatch(setCustomer({ name: name.trim(), phone: 0, guests: guestCount }));
         dispatch(removeAllItems());
         closeModal();
         navigate('/tables');

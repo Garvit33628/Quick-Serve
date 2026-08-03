@@ -22,10 +22,6 @@ const Register = ({ setIsRegister }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!formData.role) {
-            enqueueSnackbar("Please select a role!", { variant: "warning" });
-            return;
-        }
         if (formData.phone.length !== 10) {
             enqueueSnackbar("Phone number must be exactly 10 digits!", { variant: "warning" });
             return;
@@ -130,27 +126,6 @@ const Register = ({ setIsRegister }) => {
                             minLength={6}
                             required
                         />
-                    </div>
-                </div>
-
-                <div>
-                    <label className='block text-[#ababab] mb-2 mt-3 text-sm font-medium'>
-                        Choose your role
-                    </label>
-
-                    <div className="flex items-center gap-3 mt-4">
-                        {['Staff', 'Admin'].map((role) => (
-                            <button
-                                key={role}
-                                type='button'
-                                onClick={() => handleRoleSelection(role)}
-                                className={`px-4 py-3 w-full rounded-lg text-white font-semibold transition ${
-                                    formData.role === role ? "bg-indigo-700" : "bg-[#1f1f1f] hover:bg-[#2a2a2a]"
-                                }`}
-                            >
-                                {role}
-                            </button>
-                        ))}
                     </div>
                 </div>
 

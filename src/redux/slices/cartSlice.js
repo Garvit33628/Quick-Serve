@@ -13,9 +13,43 @@ const loadCartState = () => {
 const saveCartState = (state) => {
     try {
         localStorage.setItem("qs_cartData", JSON.stringify(state));
+        const custDataStr = localStorage.getItem("qs_customerData");
+        if (custDataStr) {
+            const cust = JSON.parse(custDataStr);
+            const tableId = cust?.table?.tableId || cust?.table?._id;
+            const orderId = cust?.activeOrderId || cust?.orderId;
+            if (tableId) {
+                localStorage.setItem(`qs_table_cart_${tableId}`, JSON.stringify(state));
+            }
+            if (orderId) {
+                localStorage.setItem(`qs_order_cart_${orderId}`, JSON.stringify(state));
+            }
+        }
     } catch (err) {
         console.error("Error saving cart state:", err);
     }
+};
+
+export const getCartForTable = (tableId, orderId) => {
+    try {
+        if (tableId) {
+            const data = localStorage.getItem(`qs_table_cart_${tableId}`);
+            if (data) {
+                const parsed = JSON.parse(data);
+                if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+            }
+        }
+        if (orderId) {
+            const data = localStorage.getItem(`qs_order_cart_${orderId}`);
+            if (data) {
+                const parsed = JSON.parse(data);
+                if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+            }
+        }
+    } catch (err) {
+        console.error("Error getting cart for table:", err);
+    }
+    return null;
 };
 
 const cartSlice = createSlice({
@@ -34,19 +68,20 @@ const cartSlice = createSlice({
             const existingItem = state.find(item => (item.id || item._id) === targetId);
 
             if (existingItem) {
-                existingItem.quantity += newItem.quantity;
+                existingItem.quantity += (newItem.quantity || 1);
                 const pPerQty = newItem.pricePerQuantity || (newItem.price / newItem.quantity);
                 existingItem.pricePerQuantity = pPerQty;
                 existingItem.price = existingItem.quantity * pPerQty;
             } else {
-                const pPerQty = newItem.pricePerQuantity || (newItem.price / newItem.quantity);
+                const qty = newItem.quantity || 1;
+                const pPerQty = newItem.pricePerQuantity || (newItem.price ? newItem.price / qty : 0);
                 state.push({
                     id: targetId,
                     _id: targetId,
                     name: newItem.name,
                     pricePerQuantity: pPerQty,
-                    quantity: newItem.quantity,
-                    price: newItem.price || (pPerQty * newItem.quantity)
+                    quantity: qty,
+                    price: newItem.price || (pPerQty * qty)
                 });
             }
             saveCartState(state);
@@ -77,9 +112,13 @@ const cartSlice = createSlice({
             return newState;
         },
 
-        removeAllItems: () => {
+        removeAllItems: (state, action) => {
             try {
                 localStorage.removeItem("qs_cartData");
+                const tableId = action?.payload?.tableId;
+                const orderId = action?.payload?.orderId;
+                if (tableId) localStorage.removeItem(`qs_table_cart_${tableId}`);
+                if (orderId) localStorage.removeItem(`qs_order_cart_${orderId}`);
             } catch (e) {}
             return [];
         }

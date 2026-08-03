@@ -8,6 +8,7 @@ import RecentOrders from '../components/home/RecentOrders';
 import PopularDishes from '../components/home/PopularDishes';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { getOrders } from '../https';
+import { getLocalDateString } from '../utils';
 
 const Home = () => {
     const { data: orderRes } = useQuery({
@@ -18,8 +19,15 @@ const Home = () => {
 
     const orders = orderRes?.data?.data || [];
 
-    const totalEarnings = orders
-        .filter((o) => o.paymentStatus === "Paid")
+    const todayLocalStr = getLocalDateString(new Date());
+
+    
+    const dailyEarnings = orders
+        .filter((o) => {
+            const isPaid = o.paymentStatus === "Paid" || o.orderStatus === "Completed";
+            const orderLocalDateStr = getLocalDateString(o.orderDate || o.createdAt);
+            return isPaid && orderLocalDateStr === todayLocalStr;
+        })
         .reduce((sum, o) => sum + (o.bills?.totalWithTax || 0), 0);
 
     const inProgressCount = orders.filter((o) => o.orderStatus === "In Progress").length;
@@ -33,7 +41,7 @@ const Home = () => {
                     <MiniCard
                         title="Total Earnings"
                         icon={<BsCashCoin />}
-                        number={totalEarnings > 0 ? totalEarnings.toFixed(2) : "0.00"}
+                        number={dailyEarnings > 0 ? dailyEarnings.toFixed(2) : "0.00"}
                     />
                     <MiniCard
                         title="In Progress"

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { MdTableBar, MdCategory } from 'react-icons/md';
+import BottomNav from '../components/shared/BottomNav';
 import { BiSolidDish } from 'react-icons/bi';
 import Metrics from '../components/dashboard/Metrics';
 import RecentOrders from '../components/dashboard/RecentOrders';
 import CategoryManagement from '../components/dashboard/CategoryManagement';
 import DishesManagement from '../components/dashboard/DishesManagement';
+import StaffManagement from '../components/dashboard/StaffManagement';
 import Modal from '../components/dashboard/Modal';
 
 const buttons = [
@@ -13,7 +15,9 @@ const buttons = [
     { label: "Add Dishes", icon: <BiSolidDish />, action: "dishes" }
 ];
 
-const tabs = ["Metrics", "Orders", "Categories", "Dishes"];
+const tabs = ["Metrics", "Orders", "Categories", "Dishes", "Staff Roles"];
+
+ 
 
 const Dashboard = () => {
     const [isTableModalOpen, setIsTableModalOpen] = useState(false);
@@ -55,6 +59,14 @@ const Dashboard = () => {
                         ))}
                     </div>
 
+                    
+                            
+
+                            
+                    
+
+                    
+
                     <div className='flex items-center gap-2 flex-wrap'>
                         {tabs.map((tab) => (
                             <button
@@ -84,6 +96,7 @@ const Dashboard = () => {
                         onOpenEditDish={handleOpenEditDish}
                     />
                 )}
+                {activeTab === 'Staff Roles' && <StaffManagement />}
 
                 {isTableModalOpen && (
                     <Modal
@@ -93,6 +106,7 @@ const Dashboard = () => {
                     />
                 )}
             </div>
+             <BottomNav />
         </div>
     );
 };

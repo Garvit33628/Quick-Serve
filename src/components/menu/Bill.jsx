@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { getTotalPrice, removeAllItems } from '../../redux/slices/cartSlice';
 import { enqueueSnackbar } from "notistack";
-import { useMutation } from '@tanstack/react-query';
-import { addOrder, updateTable, checkoutOrder } from '../../https';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { addOrder, updateTable, checkoutOrder, updateOrderApi } from '../../https';
 import { removeCustomer, setOrder } from '../../redux/slices/customerSlice';
 import Invoice from '../invoice/invoice';
 
 const Bill = () => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const customerData = useSelector((state) => state.customer);
     const cartData = useSelector((state) => state.cart);
     const total = useSelector(getTotalPrice);
@@ -20,7 +23,12 @@ const Bill = () => {
     const [showInvoice, setShowInvoice] = useState(false);
     const [orderInfo, setOrderInfo] = useState(null);
 
-  
+    const handleCloseInvoice = () => {
+        setShowInvoice(false);
+        queryClient.invalidateQueries(['tables']);
+        navigate('/tables');
+    };
+
     const tableUpdateMutation = useMutation({
         mutationFn: (reqData) => updateTable(reqData),
         onSuccess: () => {
@@ -31,7 +39,6 @@ const Bill = () => {
         }
     });
 
-   
     const orderMutation = useMutation({
         mutationFn: (reqData) => addOrder(reqData),
         onSuccess: (resData) => {
@@ -65,16 +72,32 @@ const Bill = () => {
         }
     });
 
-    
     const checkoutMutation = useMutation({
         mutationFn: ({ id, paymentMethod }) => checkoutOrder({ id, paymentMethod }),
-        onSuccess: (resData) => {
+        onSuccess: (resData, variables) => {
             const data = resData.data.data;
-            setOrderInfo(data);
+            const mergedOrderInfo = {
+                ...data,
+                items: (data?.items && data.items.length > 0) ? data.items : (variables?.snapshotItems || []),
+                bills: (data?.bills && Number(data.bills.total) > 0) ? data.bills : (variables?.snapshotBills || { total: 0, tax: 0, totalWithTax: 0 }),
+                customerDetails: data?.customerDetails?.name ? data.customerDetails : {
+                    name: customerData.customerName || "Customer",
+                    phone: customerData.customerPhone || "N/A",
+                    guests: customerData.guests || 1
+                }
+            };
+
+            setOrderInfo(mergedOrderInfo);
             setShowInvoice(true);
             enqueueSnackbar("Checkout completed successfully!", { variant: "success" });
+
+            const tableId = customerData.table?.tableId || customerData.table?._id || (data?.table ? (typeof data.table === 'object' ? data.table._id : data.table) : null);
+            if (tableId) {
+                updateTable({ tableId, status: "Available", orderId: null }).catch(err => console.error("Table unbook error:", err));
+            }
             dispatch(removeCustomer());
-            dispatch(removeAllItems());
+            dispatch(removeAllItems({ tableId, orderId: data?._id }));
+            queryClient.invalidateQueries(['tables']);
         },
         onError: (error) => {
             const message = error?.response?.data?.message || "Failed to checkout order!";
@@ -82,87 +105,76 @@ const Bill = () => {
         }
     });
 
-    const handlePlaceOrder = async () => {
+    const handleDirectCheckout = async () => {
         if (!paymentMethod) {
             enqueueSnackbar("Please select a payment method!", { variant: "warning" });
             return;
         }
-        if (cartData.length === 0) {
-            enqueueSnackbar("Your cart is empty!", { variant: "warning" });
-            return;
-        }
-        if (!customerData.customerName) {
-            enqueueSnackbar("Please enter customer information first!", { variant: "warning" });
+        if (!cartData || cartData.length === 0) {
+            enqueueSnackbar("Cannot checkout an empty cart! Please add items first.", { variant: "warning" });
             return;
         }
 
-        const tableId = customerData.table?.tableId || customerData.table?._id || null;
+        const snapshotItems = cartData.map(item => ({
+            id: item.id || item._id,
+            _id: item.id || item._id,
+            name: item.name,
+            quantity: item.quantity,
+            pricePerQuantity: item.pricePerQuantity || (item.price / item.quantity),
+            price: item.price
+        }));
 
-        const orderData = {
-            customerDetails: {
-                name: customerData.customerName,
-                phone: Number(customerData.customerPhone) || 9800000000,
-                guests: Number(customerData.guests) || 1
-            },
-            orderStatus: "In Progress",
-            bills: {
-                total: total,
-                tax: tax,
-                totalWithTax: totalPriceWithTax
-            },
-            items: cartData,
-            table: tableId,
-            paymentMethod: paymentMethod
+        const snapshotBills = {
+            total: total,
+            tax: tax,
+            totalWithTax: totalPriceWithTax
         };
 
-        orderMutation.mutate(orderData);
-    };
-
-    const handleDirectCheckout = () => {
-        if (!paymentMethod) {
-            enqueueSnackbar("Please select a payment method!", { variant: "warning" });
-            return;
-        }
-        if (cartData.length === 0 && !customerData.activeOrderId) {
-            enqueueSnackbar("Your cart is empty!", { variant: "warning" });
-            return;
-        }
-
-     
-        if (customerData.activeOrderId) {
-            checkoutMutation.mutate({ id: customerData.activeOrderId, paymentMethod });
-        } else {
-           
+        try {
+            let orderIdToCheckout = customerData.activeOrderId;
             const tableId = customerData.table?.tableId || customerData.table?._id || null;
-            const orderData = {
+
+            const orderPayload = {
+                items: snapshotItems,
+                bills: snapshotBills,
                 customerDetails: {
                     name: customerData.customerName || "Walk-in Customer",
                     phone: Number(customerData.customerPhone) || 9800000000,
                     guests: Number(customerData.guests) || 1
                 },
                 orderStatus: "In Progress",
-                bills: {
-                    total: total,
-                    tax: tax,
-                    totalWithTax: totalPriceWithTax
-                },
-                items: cartData,
-                table: tableId,
                 paymentMethod: paymentMethod
             };
 
-            addOrder(orderData)
-                .then((res) => {
+            if (orderIdToCheckout) {
+                try {
+                    await updateOrderApi({ orderId: orderIdToCheckout, ...orderPayload });
+                } catch (e) {
+                    console.log("updateOrderApi fallback triggered");
+                }
+            } else {
+                try {
+                    const res = await addOrder({ ...orderPayload, table: tableId });
                     const data = res.data.data;
+                    orderIdToCheckout = data._id;
                     if (data.table) {
                         const tId = typeof data.table === 'object' ? data.table._id : data.table;
-                        updateTable({ tableId: tId, status: "Booked", orderId: data._id });
+                        await updateTable({ tableId: tId, status: "Booked", orderId: data._id });
                     }
-                    checkoutMutation.mutate({ id: data._id, paymentMethod });
-                })
-                .catch((err) => {
-                    enqueueSnackbar("Checkout failed to save order!", { variant: "error" });
-                });
+                } catch (e) {
+                    console.log("addOrder fallback triggered");
+                }
+            }
+
+            checkoutMutation.mutate({
+                id: orderIdToCheckout,
+                paymentMethod,
+                snapshotItems,
+                snapshotBills
+            });
+        } catch (err) {
+            console.error("Direct checkout error:", err);
+            enqueueSnackbar("Checkout failed!", { variant: "error" });
         }
     };
 
@@ -213,23 +225,15 @@ const Bill = () => {
             <div className='flex items-center gap-3 px-5 mt-4 pb-4'>
                 <button
                     onClick={handleDirectCheckout}
-                    disabled={checkoutMutation.isPending || orderMutation.isPending}
-                    className='bg-[#025cca] hover:bg-[#024aa3] disabled:opacity-50 px-4 py-3 w-full rounded-lg text-[#f5f5f5] font-semibold text-sm transition'
+                    disabled={checkoutMutation.isPending}
+                    className='bg-[#025cca] hover:bg-[#024aa3] disabled:opacity-50 px-4 py-3 w-full rounded-lg text-[#f5f5f5] font-semibold text-sm transition shadow-md'
                 >
                     {checkoutMutation.isPending ? "Checking out..." : "Direct Checkout"}
-                </button>
-
-                <button
-                    onClick={handlePlaceOrder}
-                    disabled={orderMutation.isPending || checkoutMutation.isPending}
-                    className='bg-[#f6b100] hover:bg-[#d99c00] disabled:opacity-50 px-4 py-3 w-full rounded-lg text-[#1f1f1f] font-semibold text-sm transition'
-                >
-                    {orderMutation.isPending ? "Saving..." : (customerData.activeOrderId ? "Update Order" : "Place Order")}
                 </button>
             </div>
 
             {showInvoice && orderInfo && (
-                <Invoice orderInfo={orderInfo} setShowInvoice={setShowInvoice} />
+                <Invoice orderInfo={orderInfo} setShowInvoice={handleCloseInvoice} />
             )}
         </>
     );

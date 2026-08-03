@@ -13,9 +13,27 @@ const Invoice = ({ orderInfo, setShowInvoice }) => {
     const customerPhone = orderInfo.customerDetails?.phone || customerData?.customerPhone || "N/A";
     const guests = orderInfo.customerDetails?.guests || customerData?.guests || 1;
     const items = orderInfo.items || [];
-    const subtotal = orderInfo.bills?.total ? Number(orderInfo.bills.total).toFixed(2) : "0.00";
-    const tax = orderInfo.bills?.tax ? Number(orderInfo.bills.tax).toFixed(2) : "0.00";
-    const grandTotal = orderInfo.bills?.totalWithTax ? Number(orderInfo.bills.totalWithTax).toFixed(2) : "0.00";
+
+    const calculatedSubtotal = items.reduce((acc, item) => {
+        const qty = Number(item.quantity) || 1;
+        const price = Number(item.price) || ((Number(item.pricePerQuantity) || 0) * qty);
+        return acc + price;
+    }, 0);
+
+    const calculatedTax = (calculatedSubtotal * 13) / 100;
+    const calculatedGrandTotal = calculatedSubtotal + calculatedTax;
+
+    const subtotal = (orderInfo.bills?.total && Number(orderInfo.bills.total) > 0)
+        ? Number(orderInfo.bills.total).toFixed(2)
+        : calculatedSubtotal.toFixed(2);
+
+    const tax = (orderInfo.bills?.tax && Number(orderInfo.bills.tax) > 0)
+        ? Number(orderInfo.bills.tax).toFixed(2)
+        : calculatedTax.toFixed(2);
+
+    const grandTotal = (orderInfo.bills?.totalWithTax && Number(orderInfo.bills.totalWithTax) > 0)
+        ? Number(orderInfo.bills.totalWithTax).toFixed(2)
+        : calculatedGrandTotal.toFixed(2);
     const orderTime = orderInfo.orderDate || orderInfo.createdAt || Date.now();
     
     const formattedDate = new Date(orderTime).toLocaleDateString('en-US', {
@@ -141,6 +159,12 @@ const Invoice = ({ orderInfo, setShowInvoice }) => {
         }, 500);
     };
 
+    const handleClose = () => {
+        if (typeof setShowInvoice === 'function') {
+            setShowInvoice(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex justify-center items-center z-50 p-4">
             <div className="bg-[#181818] border border-gray-800 rounded-2xl shadow-2xl w-[370px] max-h-[92vh] flex flex-col overflow-hidden text-gray-200">
@@ -151,7 +175,7 @@ const Invoice = ({ orderInfo, setShowInvoice }) => {
                         <h2 className="text-sm font-semibold text-gray-100">Order Completed</h2>
                     </div>
                     <button
-                        onClick={() => setShowInvoice(false)}
+                        onClick={handleClose}
                         className="text-gray-400 hover:text-white transition p-1 rounded-lg hover:bg-gray-800"
                     >
                         <FaTimes size={16} />
@@ -199,10 +223,6 @@ const Invoice = ({ orderInfo, setShowInvoice }) => {
                             <div className="flex justify-between">
                                 <span className="text-gray-700">Customer:</span>
                                 <span className="font-bold">{customerName}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-gray-700">Phone:</span>
-                                <span>{customerPhone}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-700">Guests:</span>
@@ -293,7 +313,7 @@ const Invoice = ({ orderInfo, setShowInvoice }) => {
                         <FaPrint size={15} /> Print Thermal Receipt
                     </button>
                     <button
-                        onClick={() => setShowInvoice(false)}
+                        onClick={handleClose}
                         className="bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold text-sm py-2.5 px-4 rounded-xl transition"
                     >
                         Close

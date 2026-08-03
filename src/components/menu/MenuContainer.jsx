@@ -1,24 +1,22 @@
 import React, { useState, useMemo } from 'react';
 import { getRandomBG } from '../../utils';
 import { GrRadialSelected } from "react-icons/gr";
-import { FaShoppingCart } from 'react-icons/fa';
-import { useDispatch } from 'react-redux';
-import { addItems } from '../../redux/slices/cartSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { addItems, updateItemQuantity } from '../../redux/slices/cartSlice';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { getCategories, getMenuItems } from '../../https';
 import { enqueueSnackbar } from 'notistack';
 
 const MenuContainer = () => {
     const dispatch = useDispatch();
+    const cartData = useSelector((state) => state.cart);
 
-  
     const { data: catRes, isLoading: catLoading } = useQuery({
         queryKey: ['categories'],
         queryFn: () => getCategories(),
         placeholderData: keepPreviousData,
     });
 
-   
     const { data: menuRes, isLoading: menuLoading } = useQuery({
         queryKey: ['menuItems'],
         queryFn: () => getMenuItems(),
@@ -28,7 +26,6 @@ const MenuContainer = () => {
     const categoriesList = catRes?.data?.data || [];
     const menuItemsList = menuRes?.data?.data || [];
 
-  
     const categoriesData = useMemo(() => {
         return categoriesList.map(cat => {
             const items = menuItemsList.filter(item => {
@@ -47,7 +44,6 @@ const MenuContainer = () => {
 
     const [selectedCategory, setSelectedCategory] = useState(null);
 
-  
     const activeCategory = useMemo(() => {
         if (selectedCategory) {
             const found = categoriesData.find(c => String(c.id) === String(selectedCategory));
@@ -56,44 +52,27 @@ const MenuContainer = () => {
         return categoriesData[0] || null;
     }, [categoriesData, selectedCategory]);
 
-    const [itemCounts, setItemCounts] = useState({});
-
-    const getItemCount = (id) => itemCounts[id] || 0;
-
-    const increment = (id) => {
-        setItemCounts(prev => ({
-            ...prev,
-            [id]: (prev[id] || 0) + 1
-        }));
+    const getItemCountInCart = (itemId) => {
+        const item = cartData.find(i => (i.id || i._id) === itemId);
+        return item ? item.quantity : 0;
     };
 
-    const decrement = (id) => {
-        setItemCounts(prev => ({
-            ...prev,
-            [id]: Math.max(0, (prev[id] || 0) - 1)
-        }));
-    };
-
-    const handleAddToCart = (item) => {
+    const handleIncrement = (item) => {
         const itemId = item._id || item.id;
-        const count = getItemCount(itemId);
-        if (count === 0) {
-            enqueueSnackbar("Please select quantity first!", { variant: "warning" });
-            return;
-        }
-
-        const { name, price } = item;
         const newObj = {
             id: itemId,
-            name,
-            pricePerQuantity: price,
-            quantity: count,
-            price: price * count
+            _id: itemId,
+            name: item.name,
+            pricePerQuantity: item.price,
+            quantity: 1,
+            price: item.price
         };
-
         dispatch(addItems(newObj));
-        enqueueSnackbar(`Added ${count}x ${name} to cart!`, { variant: "success" });
-        setItemCounts(prev => ({ ...prev, [itemId]: 0 }));
+    };
+
+    const handleDecrement = (item) => {
+        const itemId = item._id || item.id;
+        dispatch(updateItemQuantity({ id: itemId, delta: -1 }));
     };
 
     if (catLoading || menuLoading) {
@@ -111,7 +90,6 @@ const MenuContainer = () => {
 
     return (
         <>
-            
             <div className='grid grid-cols-4 gap-4 px-10 py-4 w-[100%] max-h-[160px] overflow-y-auto scrollbar-none'>
                 {categoriesData.map((menu) => {
                     const isSelected = activeCategory?.id === menu.id;
@@ -146,31 +124,30 @@ const MenuContainer = () => {
                 {activeCategory?.items && activeCategory.items.length > 0 ? (
                     activeCategory.items.map((item) => {
                         const itemId = item._id || item.id;
-                        const count = getItemCount(itemId);
+                        const count = getItemCountInCart(itemId);
 
                         return (
                             <div
                                 key={itemId}
-                                className='flex flex-col items-start justify-between p-4 rounded-lg h-[150px] cursor-pointer hover:bg-[#2a2a2a] bg-[#1a1a1a] transition'
+                                className='flex flex-col items-start justify-between p-4 rounded-lg h-[150px] hover:bg-[#2a2a2a] bg-[#1a1a1a] transition border border-[#262626]'
                             >
                                 <div className='flex items-start justify-between w-full'>
                                     <h1 className='text-[#f5f5f5] text-lg font-semibold truncate pr-2'>
                                         {item.name}
                                     </h1>
-                                    <button
-                                        onClick={() => handleAddToCart(item)}
-                                        className='bg-[#2e4a40] hover:bg-[#395e52] text-[#02ca3a] p-2 rounded-lg cursor-pointer transition'
-                                        title="Add to Cart"
-                                    >
-                                        <FaShoppingCart size={18} />
-                                    </button>
+                                    {count > 0 && (
+                                        <span className="bg-[#f6b100] text-gray-900 text-xs font-bold px-2 py-0.5 rounded-full shrink-0">
+                                            {count} in cart
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="flex items-center justify-between w-full">
                                     <p className='text-[#f5f5f5] text-xl font-bold'> रु {item.price}</p>
-                                    <div className='flex items-center justify-between bg-[#1f1f1f] px-3 py-2 rounded-lg gap-4'>
+                                    <div className='flex items-center justify-between bg-[#1f1f1f] px-3 py-2 rounded-lg gap-4 border border-[#333333]'>
                                         <button
-                                            onClick={() => decrement(itemId)}
-                                            className='text-yellow-500 text-2xl font-bold hover:text-yellow-400'
+                                            onClick={() => handleDecrement(item)}
+                                            disabled={count === 0}
+                                            className='text-yellow-500 text-2xl font-bold hover:text-yellow-400 disabled:opacity-30 disabled:hover:text-yellow-500'
                                         >
                                             &minus;
                                         </button>
@@ -178,7 +155,7 @@ const MenuContainer = () => {
                                             {count}
                                         </span>
                                         <button
-                                            onClick={() => increment(itemId)}
+                                            onClick={() => handleIncrement(item)}
                                             className='text-yellow-500 text-2xl font-bold hover:text-yellow-400'
                                         >
                                             &#43;
